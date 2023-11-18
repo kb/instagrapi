@@ -54,9 +54,7 @@ class DownloadVideoMixin:
         """
         media = self.media_info(media_pk)
         assert media.media_type == 2, "Must been video"
-        filename = "{username}_{media_pk}".format(
-            username=media.user.username, media_pk=media_pk
-        )
+        filename = "{media_pk}".format(media_pk=media.code)
         return self.video_download_by_url(media.video_url, filename, folder)
 
     def video_download_by_url(
