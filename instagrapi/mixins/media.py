@@ -123,7 +123,7 @@ class MediaMixin:
         B-fKL9qpeab -> 2278584739065882267
         CCQQsCXjOaBfS3I2PpqsNkxElV9DXj61vzo5xs0 -> 2346448800803776129
         """
-        return InstagramIdCodec.decode(code[:11])
+        return str(InstagramIdCodec.decode(code[:11]))
 
     def media_pk_from_url(self, url: str) -> str:
         """
@@ -369,7 +369,7 @@ class MediaMixin:
         UserShort
             An object of UserShort
         """
-        return self.media_info(media_pk).user
+        return self.media_info_v1(media_pk).user
 
     def media_oembed(self, url: str) -> Dict:
         """
@@ -767,7 +767,7 @@ class MediaMixin:
         )
         pinned_medias = []
         for media in medias["items"]:
-            if media.get("timeline_pinned_user_ids") != None:
+            if media.get("timeline_pinned_user_ids") is not None:
                 pinned_medias.append(extract_media_v1(media))
         self.base_headers["X-IG-Nav-Chain"] = default_nav
         return pinned_medias
@@ -1153,3 +1153,27 @@ class MediaMixin:
         A boolean value
         """
         return self.media_pin(media_pk, True)
+
+
+    def media_schedule_livestream(self, title, auto_start=False):
+        data = {
+            "broadcast_message": title,
+            "internal_only": "false",
+            "source_type": "203",
+            "visibility": "0"
+        }
+        result = self.private_request("live/create/", data)
+        broadcast_id = result['broadcast_id']
+        if auto_start:
+            startRes = self.media_start_livestream(broadcast_id)
+        return result
+
+    def media_start_livestream(self, broadcast_id):
+        result = self.private_request(f"live/{broadcast_id}/start/", {'empty': None})
+        return result["status"] == "ok"
+
+    def media_fetch_live_chat(self, broadcast_id, last_comment_ts=None):
+        params = None
+        if last_comment_ts:
+            params = {'last_comment_ts': last_comment_ts}
+        return self.private_request(f"live/{broadcast_id}/get_comment/", params=params)
